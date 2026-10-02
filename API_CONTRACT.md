@@ -100,3 +100,8 @@ These endpoints are reserved for the dashboard integration:
 - `GET /tasks`
 - `GET /tasks/{task_id}`
 - `GET /tasks/{task_id}/events`
+- `GET /agents/{agent_id}/tasks`
+
+`GET /advisors` returns advisors with agents that have reported activity. Each agent
+includes its most recently started task, allowing the dashboard to display
+agents in recent-activity order without loading every task first.

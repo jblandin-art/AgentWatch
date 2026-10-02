@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentWatch</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">AI agent observability</p>
+          <h1>AgentWatch</h1>
+          <p class="subtitle">Choose an advisor to see their agents and latest activity.</p>
+        </div>
+        <span id="connection-badge" class="demo-badge">Connecting to API...</span>
+      </header>
+
+      <p id="loading-state" class="empty-state">Loading advisors...</p>
+      <p id="error-state" class="error-state" hidden></p>
+
+      <section class="advisor-workspace">
+        <nav class="panel advisor-panel" aria-label="Advisors">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Advisors</p>
+              <h2>People</h2>
+            </div>
+          </div>
+          <div id="advisor-list" class="advisor-list"></div>
+        </nav>
+
+        <section class="panel agent-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Assigned agents</p>
+              <h2 id="advisor-title">Select an advisor</h2>
+              <p id="advisor-email" class="muted"></p>
+            </div>
+          </div>
+          <div id="agent-list" class="agent-list">
+            <p class="muted">Select an advisor to view their agents.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
