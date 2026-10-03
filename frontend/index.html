@@ -4,43 +4,71 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AgentWatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app-shell">
-      <header class="page-header">
-        <div>
-          <p class="eyebrow">AI agent observability</p>
-          <h1>AgentWatch</h1>
-          <p class="subtitle">Choose an advisor to see their agents and latest activity.</p>
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-mark" src="eye.png" alt="" />
+          <div>
+            <strong>AgentWatch</strong>
+            <span>Advisor operations</span>
+          </div>
         </div>
-        <span id="connection-badge" class="demo-badge">Connecting to API...</span>
+        <div class="topbar-right">
+          <span class="refresh-status"><span class="live-dot"></span><span id="connection-badge">Connecting...</span></span>
+          <span class="last-updated">Live activity</span>
+        </div>
       </header>
 
-      <p id="loading-state" class="empty-state">Loading advisors...</p>
+      <section class="page-intro">
+        <div>
+          <p class="eyebrow">Operations center</p>
+          <h1>Agent Activity</h1>
+          <p class="subtitle">Monitor Cyan instances' prompt histories, tool usage, and error logs.</p>
+        </div>
+      </section>
+
+      <p id="loading-state" class="loading-state">Loading advisor activity...</p>
       <p id="error-state" class="error-state" hidden></p>
 
-      <section class="advisor-workspace">
-        <nav class="panel advisor-panel" aria-label="Advisors">
-          <div class="panel-heading">
+      <section class="metrics" aria-label="Activity summary">
+        <div class="metric"><span>Active tasks</span><strong id="active-task-count">—</strong></div>
+        <div class="metric"><span>Completed</span><strong id="completed-task-count">—</strong></div>
+        <div class="metric"><span>Failed executions</span><strong id="failed-task-count">—</strong></div>
+        <div class="metric"><span>Advisors</span><strong id="advisor-count">—</strong></div>
+      </section>
+
+      <section class="workspace">
+        <aside class="advisor-sidebar" aria-label="Advisors">
+          <div class="section-heading">
             <div>
-              <p class="eyebrow">Advisors</p>
-              <h2>People</h2>
+              <p class="eyebrow">Coverage</p>
+              <h2>Advisors</h2>
             </div>
+            <span class="count-label" id="advisor-count-label"></span>
           </div>
           <div id="advisor-list" class="advisor-list"></div>
-        </nav>
+        </aside>
 
-        <section class="panel agent-panel">
-          <div class="panel-heading">
+        <section class="activity-panel">
+          <div class="activity-header">
             <div>
-              <p class="eyebrow">Assigned agents</p>
+              <p class="eyebrow">Selected advisor</p>
               <h2 id="advisor-title">Select an advisor</h2>
               <p id="advisor-email" class="muted"></p>
             </div>
+            <span class="activity-label">Task activity</span>
           </div>
-          <div id="agent-list" class="agent-list">
-            <p class="muted">Select an advisor to view their agents.</p>
+          <div class="table-head" aria-hidden="true">
+            <span>Workflow</span><span>Agent</span><span>Status</span><span>Started</span><span></span>
+          </div>
+          <div id="agent-list" class="task-list">
+            <p class="muted empty-task-state">Select an advisor to view their task activity.</p>
           </div>
         </section>
       </section>

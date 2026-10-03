@@ -22,6 +22,26 @@ ADVISORS = [
         "name": "Luis Garcia",
         "email": "luis.garcia@example.test",
     },
+    {
+        "id": "advisor-004",
+        "name": "Avery Johnson",
+        "email": "avery.johnson@example.test",
+    },
+    {
+        "id": "advisor-005",
+        "name": "Casey Williams",
+        "email": "casey.williams@example.test",
+    },
+    {
+        "id": "advisor-006",
+        "name": "Morgan Lee",
+        "email": "morgan.lee@example.test",
+    },
+    {
+        "id": "advisor-007",
+        "name": "Taylor Brown",
+        "email": "taylor.brown@example.test",
+    },
 ]
 
 

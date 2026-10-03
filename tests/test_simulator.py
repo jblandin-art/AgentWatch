@@ -23,5 +23,14 @@ def test_simulator_emits_agent_activity(monkeypatch):
 
     assert count == 3
     agent_ids = {event.agent_id for event in emitted}
-    assert agent_ids <= {"agent-001", "agent-002", "agent-003", "agent-004"}
+    assert agent_ids <= {
+        "agent-001",
+        "agent-002",
+        "agent-003",
+        "agent-004",
+        "agent-005",
+        "agent-006",
+        "agent-007",
+        "agent-008",
+    }
     assert len({event.task_id for event in emitted}) == 3

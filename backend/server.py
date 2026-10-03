@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlparse
 from uuid import uuid4
+
+from .postgres import PostgresConnection
 
 ALLOWED_STATUSES = {"waiting", "running", "completed", "failed"}
 ALLOWED_EVENT_TYPES = {
@@ -44,12 +47,20 @@ def utc_timestamp() -> str:
 class Database:
     def __init__(self, path: str = "agentwatch.db") -> None:
         self.path = path
-        self.connection = sqlite3.connect(path, check_same_thread=False)
-        self.connection.row_factory = sqlite3.Row
-        self.connection.execute("PRAGMA foreign_keys = ON")
+        self.backend = "postgres" if os.getenv("AGENTWATCH_DB_BACKEND") == "postgres" else "sqlite"
+        if self.backend == "postgres":
+            self.connection = PostgresConnection.from_environment()
+        else:
+            self.connection = sqlite3.connect(path, check_same_thread=False)
+            self.connection.row_factory = sqlite3.Row
+            self.connection.execute("PRAGMA foreign_keys = ON")
         self._create_schema()
 
     def _create_schema(self) -> None:
+        if self.backend == "postgres":
+            # PostgreSQL is initialized explicitly with migrations so the
+            # application role never needs DDL privileges at runtime.
+            return
         self.connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS advisors (
@@ -101,7 +112,7 @@ class Database:
 
     @staticmethod
     def _row_to_dict(row: sqlite3.Row | tuple[Any, ...], columns: list[str]) -> dict[str, Any]:
-        if isinstance(row, sqlite3.Row):
+        if isinstance(row, (sqlite3.Row, Mapping)):
             return dict(row)
         return dict(zip(columns, row))
 
@@ -379,7 +390,7 @@ class Database:
 
     def events(self, task_id: str) -> list[dict[str, Any]]:
         cursor = self.connection.execute(
-            "SELECT * FROM events WHERE task_id = ? ORDER BY timestamp, rowid",
+            "SELECT * FROM events WHERE task_id = ? ORDER BY timestamp, id",
             (task_id,),
         )
         rows = cursor.fetchall()
@@ -388,7 +399,8 @@ class Database:
         )
         result = []
         for item in items:
-            item["metadata"] = json.loads(item["metadata"])
+            if isinstance(item["metadata"], str):
+                item["metadata"] = json.loads(item["metadata"])
             result.append(item)
         return result
 

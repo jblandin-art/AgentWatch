@@ -52,7 +52,17 @@ class FakeAgent:
         """Run one task. Callers provide a prompt, never an agent ID."""
         if not prompt.strip():
             raise ValueError("prompt must not be empty")
-        if task_type not in {"meeting_prep", "portfolio_summary", "account_maintenance"}:
+        supported_task_types = {
+            "meeting_prep",
+            "portfolio_summary",
+            "account_maintenance",
+            "risk_assessment",
+            "retirement_readiness",
+            "beneficiary_review",
+            "cash_reserve_check",
+            "allocation_review",
+        }
+        if task_type not in supported_task_types:
             raise ValueError(f"unsupported task_type: {task_type}")
 
         execution_id = task_id or f"task-{uuid4().hex[:12]}"
@@ -113,6 +123,58 @@ class FakeAgent:
                 fail_on=fail_on,
             )
         if task_type == "portfolio_summary":
+            portfolio = self._call_tool(
+                task_id, "get_portfolio", tools.get_portfolio, fail_on=fail_on
+            )
+            return self._call_tool(
+                task_id,
+                "calculate_portfolio_summary",
+                lambda: tools.calculate_portfolio_summary(portfolio),
+                fail_on=fail_on,
+            )
+        if task_type == "risk_assessment":
+            portfolio = self._call_tool(
+                task_id, "get_portfolio", tools.get_portfolio, fail_on=fail_on
+            )
+            return self._call_tool(
+                task_id,
+                "calculate_portfolio_summary",
+                lambda: tools.calculate_portfolio_summary(portfolio),
+                fail_on=fail_on,
+            )
+        if task_type == "retirement_readiness":
+            client = self._call_tool(task_id, "get_client", tools.get_client, fail_on=fail_on)
+            portfolio = self._call_tool(
+                task_id, "get_portfolio", tools.get_portfolio, fail_on=fail_on
+            )
+            summary = self._call_tool(
+                task_id,
+                "calculate_portfolio_summary",
+                lambda: tools.calculate_portfolio_summary(portfolio),
+                fail_on=fail_on,
+            )
+            return self._call_tool(
+                task_id,
+                "generate_meeting_summary",
+                lambda: tools.generate_meeting_summary(client, summary),
+                fail_on=fail_on,
+            )
+        if task_type == "beneficiary_review":
+            self._call_tool(task_id, "get_client", tools.get_client, fail_on=fail_on)
+            return self._call_tool(
+                task_id, "update_account", tools.update_account, fail_on=fail_on
+            )
+        if task_type == "cash_reserve_check":
+            portfolio = self._call_tool(
+                task_id, "get_portfolio", tools.get_portfolio, fail_on=fail_on
+            )
+            return self._call_tool(
+                task_id,
+                "calculate_portfolio_summary",
+                lambda: tools.calculate_portfolio_summary(portfolio),
+                fail_on=fail_on,
+            )
+        if task_type == "allocation_review":
             portfolio = self._call_tool(
                 task_id, "get_portfolio", tools.get_portfolio, fail_on=fail_on
             )

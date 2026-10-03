@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import random
 import time
@@ -19,22 +20,72 @@ class SeededAgent:
 
 
 SIMULATED_AGENTS = (
-    SeededAgent("advisor-001", "agent-001", ("meeting_prep", "portfolio_summary")),
-    SeededAgent("advisor-001", "agent-002", ("portfolio_summary",)),
-    SeededAgent("advisor-002", "agent-003", ("portfolio_summary", "meeting_prep")),
-    SeededAgent("advisor-003", "agent-004", ("account_maintenance", "meeting_prep")),
+    SeededAgent(
+        "advisor-001",
+        "agent-001",
+        ("meeting_prep", "risk_assessment", "allocation_review"),
+    ),
+    SeededAgent(
+        "advisor-001",
+        "agent-002",
+        ("portfolio_summary", "retirement_readiness", "cash_reserve_check"),
+    ),
+    SeededAgent(
+        "advisor-002",
+        "agent-003",
+        ("portfolio_summary", "meeting_prep", "beneficiary_review"),
+    ),
+    SeededAgent(
+        "advisor-003",
+        "agent-004",
+        ("account_maintenance", "meeting_prep", "risk_assessment"),
+    ),
+    SeededAgent(
+        "advisor-004",
+        "agent-005",
+        ("beneficiary_review", "retirement_readiness", "allocation_review"),
+    ),
+    SeededAgent(
+        "advisor-005",
+        "agent-006",
+        ("meeting_prep", "cash_reserve_check", "beneficiary_review"),
+    ),
+    SeededAgent(
+        "advisor-006",
+        "agent-007",
+        ("risk_assessment", "portfolio_summary", "retirement_readiness"),
+    ),
+    SeededAgent(
+        "advisor-007",
+        "agent-008",
+        ("account_maintenance", "allocation_review", "meeting_prep"),
+    ),
 )
 
 PROMPTS = {
     "meeting_prep": "Prepare a client meeting summary",
     "portfolio_summary": "Summarize the client's portfolio",
     "account_maintenance": "Check the account maintenance request",
+    "risk_assessment": "Review the client's portfolio risk profile",
+    "retirement_readiness": "Evaluate the client's retirement readiness",
+    "beneficiary_review": "Review the client's beneficiary information",
+    "cash_reserve_check": "Check the client's cash reserve position",
+    "allocation_review": "Review the client's investment allocation",
 }
 
 FAILURE_TOOLS = {
     "meeting_prep": ("get_portfolio", "generate_meeting_summary"),
     "portfolio_summary": ("get_portfolio", "calculate_portfolio_summary"),
     "account_maintenance": ("update_account",),
+    "risk_assessment": ("get_portfolio", "calculate_portfolio_summary"),
+    "retirement_readiness": (
+        "get_client",
+        "get_portfolio",
+        "generate_meeting_summary",
+    ),
+    "beneficiary_review": ("get_client", "update_account"),
+    "cash_reserve_check": ("get_portfolio", "calculate_portfolio_summary"),
+    "allocation_review": ("get_portfolio", "calculate_portfolio_summary"),
 }
 
 
@@ -57,34 +108,45 @@ def run_simulation(
 
     random_generator = random.Random(seed)
     emitter = HttpEventEmitter(f"{api_url.rstrip('/')}/events")
+    last_task_by_agent: dict[str, str] = {}
     completed = 0
     print(
         f"Sending simulated tasks to {api_url}. "
         f"{'Press Ctrl+C to stop.' if count is None else f'Generating {count} tasks.'}"
     )
     while count is None or completed < count:
-        assignment = random_generator.choice(SIMULATED_AGENTS)
-        task_type = random_generator.choice(assignment.task_types)
-        fail_on = None
-        if random_generator.random() < failure_rate:
-            fail_on = random_generator.choice(FAILURE_TOOLS[task_type])
-        agent = FakeAgent(
-            assignment.advisor_id,
-            emitter,
-            agent_id=assignment.agent_id,
-            delay_seconds=delay_seconds,
-        )
-        result = agent.start_task(
-            PROMPTS[task_type],
-            task_type,
-            fail_on=fail_on,
-        )
-        completed += 1
-        failure = f", failure at {fail_on}" if fail_on else ""
-        print(
-            f"[{completed}] {assignment.advisor_id} / {assignment.agent_id} "
-            f"-> {result.task_id}: {result.status}{failure}"
-        )
+        batch_size = max(1, math.ceil(len(SIMULATED_AGENTS) / 2))
+        assignments = random_generator.sample(SIMULATED_AGENTS, batch_size)
+        if count is not None:
+            assignments = assignments[: count - completed]
+        for assignment in assignments:
+            available_task_types = tuple(
+                task_type
+                for task_type in assignment.task_types
+                if task_type != last_task_by_agent.get(assignment.agent_id)
+            ) or assignment.task_types
+            task_type = random_generator.choice(available_task_types)
+            last_task_by_agent[assignment.agent_id] = task_type
+            fail_on = None
+            if random_generator.random() < failure_rate:
+                fail_on = random_generator.choice(FAILURE_TOOLS[task_type])
+            agent = FakeAgent(
+                assignment.advisor_id,
+                emitter,
+                agent_id=assignment.agent_id,
+                delay_seconds=delay_seconds,
+            )
+            result = agent.start_task(
+                PROMPTS[task_type],
+                task_type,
+                fail_on=fail_on,
+            )
+            completed += 1
+            failure = f", failure at {fail_on}" if fail_on else ""
+            print(
+                f"[{completed}] {assignment.advisor_id} / {assignment.agent_id} "
+                f"-> {result.task_id}: {result.status}{failure}"
+            )
         if count is None or completed < count:
             time.sleep(interval_seconds)
     return completed
